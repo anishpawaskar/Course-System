@@ -42,10 +42,43 @@ const validateSignupUser = (req, res, next) => {
   if (response.success) {
     next();
   } else {
-    console.log(response.error);
     const message = response.error.errors[0].message;
     res.status(400).json({ message });
   }
 };
 
-export { validateSignupUser };
+const validateSigninUser = (req, res, next) => {
+  const { email, password } = req.body || {};
+
+  const userShcema = z.object({
+    email: z
+      .string({
+        required_error: "Email is required.",
+        invalid_type_error: "Email must be a string.",
+      })
+      .email()
+      .trim()
+      .toLowerCase(),
+    password: z
+      .string({
+        required_error: "Password is required.",
+        invalid_type_error: "Password must be a string.",
+      })
+      .min(6, { message: "Password must be in between 6-64 characters." })
+      .max(64, { message: "Password must be in between 6-64 characters." }),
+  });
+
+  const response = userShcema.safeParse({
+    email,
+    password,
+  });
+
+  if (response.success) {
+    next();
+  } else {
+    const message = response.error.errors[0].message;
+    res.status(400).json({ message });
+  }
+};
+
+export { validateSignupUser, validateSigninUser };

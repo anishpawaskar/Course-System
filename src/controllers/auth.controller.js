@@ -49,4 +49,41 @@ const signupUser = async (req, res) => {
   }
 };
 
-export { signupUser };
+const signinUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email }).select("-__v");
+
+  if (!user) {
+    return res.status(400).json({ message: "Inavalid credential." });
+  }
+
+  const isPasswordCorrect = user.isPasswordCorrect(password);
+
+  if (!isPasswordCorrect) {
+    return res.status(400).json({ message: "Inavalid credential." });
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+
+  await user.save();
+
+  const options = {
+    secure: true,
+    httpOnly: true,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json({
+      message: "User signed in successfully.",
+      data: user.getUserDetails(),
+    });
+};
+
+export { signupUser, signinUser };
