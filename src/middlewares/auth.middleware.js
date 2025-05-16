@@ -11,8 +11,6 @@ const verifyJWT = async (req, res, next) => {
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-    console.log("decoded token", decodedToken);
-
     const user = await User.findById(decodedToken._id).select(
       "-__v -password -refreshToken"
     );
@@ -29,4 +27,16 @@ const verifyJWT = async (req, res, next) => {
   }
 };
 
-export { verifyJWT };
+const validateAdmin = (req, res, next) => {
+  const user = req?.user;
+
+  if (user.role === "ADMIN") {
+    next();
+  } else {
+    return res
+      .status(400)
+      .json({ message: "You don't have permission to access this route." });
+  }
+};
+
+export { verifyJWT, validateAdmin };
