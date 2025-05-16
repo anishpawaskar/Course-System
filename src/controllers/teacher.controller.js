@@ -53,6 +53,12 @@ const getAllTeachers = async (req, res) => {
           },
         },
       },
+      {
+        $project: {
+          teachers: 1,
+          totalPages: 1,
+        },
+      },
     ]);
 
     res
