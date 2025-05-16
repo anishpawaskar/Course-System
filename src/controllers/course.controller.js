@@ -28,6 +28,7 @@ const assignTeacher = async (req, res) => {
   const { courseId, teacherId } = req.params;
 
   try {
+    // TODO: assign teacher a course only if she have less than 5 courses at a time
     const updatedCourse = await Course.findByIdAndUpdate(
       {
         _id: new mongoose.Types.ObjectId(courseId),

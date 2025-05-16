@@ -1,3 +1,4 @@
+import { Mongoose } from "mongoose";
 import { User } from "../models/user.model.js";
 
 const getAllTeachers = async (req, res) => {
@@ -22,11 +23,34 @@ const getAllTeachers = async (req, res) => {
             {
               $limit: pageSize,
             },
-            // TODO: add lookup later for fetching course assign count
+            {
+              $lookup: {
+                from: "courses",
+                let: { teacherId: "$_id" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $eq: ["$teachBy", "$$teacherId"],
+                      },
+                    },
+                  },
+                ],
+                as: "totalCoursesAssigned",
+              },
+            },
+            {
+              $addFields: {
+                totalCoursesAssigned: {
+                  $size: "$totalCoursesAssigned",
+                },
+              },
+            },
             {
               $project: {
                 name: 1,
                 email: 1,
+                totalCoursesAssigned: 1,
               },
             },
           ],
