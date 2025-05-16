@@ -46,6 +46,7 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 
 userSchema.methods.generateAccessToken = function () {
   const payload = {
+    _id: this._id,
     name: this.name,
     email: this.email,
     role: this.role,

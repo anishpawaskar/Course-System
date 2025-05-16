@@ -52,38 +52,79 @@ const signupUser = async (req, res) => {
 const signinUser = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email }).select("-__v");
+  try {
+    const user = await User.findOne({ email }).select("-__v");
 
-  if (!user) {
-    return res.status(400).json({ message: "Inavalid credential." });
+    if (!user) {
+      return res.status(400).json({ message: "Inavalid credential." });
+    }
+
+    const isPasswordCorrect = user.isPasswordCorrect(password);
+
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Inavalid credential." });
+    }
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+
+    await user.save();
+
+    const options = {
+      secure: true,
+      httpOnly: true,
+    };
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json({
+        message: "User signed in successfully.",
+        data: user.getUserDetails(),
+      });
+  } catch (error) {
+    console.log("Error while signing in user.", error);
+    res
+      .status(500)
+      .json({ message: error.message || "Error while signing in user." });
   }
-
-  const isPasswordCorrect = user.isPasswordCorrect(password);
-
-  if (!isPasswordCorrect) {
-    return res.status(400).json({ message: "Inavalid credential." });
-  }
-
-  const accessToken = user.generateAccessToken();
-  const refreshToken = user.generateRefreshToken();
-
-  user.refreshToken = refreshToken;
-
-  await user.save();
-
-  const options = {
-    secure: true,
-    httpOnly: true,
-  };
-
-  return res
-    .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json({
-      message: "User signed in successfully.",
-      data: user.getUserDetails(),
-    });
 };
 
-export { signupUser, signinUser };
+const signoutUser = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $unset: {
+          refreshToken: 1,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json({
+        message: "User logged out successfully.",
+      });
+  } catch (error) {
+    console.log("Error while signing out user.", error);
+    res.status(500).json({
+      message: error.message || "Error while signing out user.",
+    });
+  }
+};
+
+export { signupUser, signinUser, signoutUser };
