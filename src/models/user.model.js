@@ -8,11 +8,13 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
     },
     email: {
       type: String,
       required: true,
       lowercase: true,
+      trim: true,
     },
     password: {
       type: String,
@@ -66,6 +68,15 @@ userSchema.methods.generateRefreshToken = function () {
   });
 
   return token;
+};
+
+userSchema.methods.getUserDetails = function () {
+  return {
+    _id: this._id,
+    name: this.name,
+    email: this.email,
+    role: this.role,
+  };
 };
 
 export const User = mongoose.model("User", userSchema);
