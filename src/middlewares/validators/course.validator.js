@@ -35,4 +35,39 @@ const validateCreateCourse = (req, res, next) => {
   }
 };
 
-export { validateCreateCourse };
+const validateAssignTeacher = (req, res, next) => {
+  const { courseId, teacherId } = req.params;
+
+  const courseSchema = z.object({
+    courseId: z
+      .string({
+        required_error: "CourseId is required.",
+        invalid_type_error: "CourseId must be a string.",
+      })
+      .refine((courseId) => Types.ObjectId.isValid(courseId), {
+        message: "CourseId is invalid ObjectId.",
+      }),
+    teacherId: z
+      .string({
+        required_error: "TeacherId is required.",
+        invalid_type_error: "TeacherId must be a string.",
+      })
+      .refine((teacherId) => Types.ObjectId.isValid(teacherId), {
+        message: "TeacherId is invalid ObjectId.",
+      }),
+  });
+
+  const resposne = courseSchema.safeParse({
+    teacherId,
+    courseId,
+  });
+
+  if (resposne.success) {
+    next();
+  } else {
+    const message = response.error.errors[0].message;
+    res.status(400).json({ message });
+  }
+};
+
+export { validateCreateCourse, validateAssignTeacher };

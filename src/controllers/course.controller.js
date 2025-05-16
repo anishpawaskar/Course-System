@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Course } from "../models/course.model.js";
 
 const createCourse = async (req, res) => {
@@ -23,4 +24,38 @@ const createCourse = async (req, res) => {
   }
 };
 
-export { createCourse };
+const assignTeacher = async (req, res) => {
+  const { courseId, teacherId } = req.params;
+
+  try {
+    const updatedCourse = await Course.findByIdAndUpdate(
+      {
+        _id: new mongoose.Types.ObjectId(courseId),
+      },
+      {
+        $set: {
+          teachBy: teacherId,
+        },
+      },
+      {
+        new: true,
+      }
+    ).select("-__v");
+
+    if (!updatedCourse) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+
+    res.status(200).json({
+      message: "Teacher assigned successfully.",
+      data: updatedCourse,
+    });
+  } catch (error) {
+    console.log("Error while assigning teacher to course.", error);
+    res.status(500).json({
+      message: error.message || "Error while assigning teacher to course.",
+    });
+  }
+};
+
+export { createCourse, assignTeacher };

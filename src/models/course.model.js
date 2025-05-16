@@ -23,6 +23,7 @@ const courseSchema = new mongoose.Schema(
     teachBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      default: null,
     },
   },
   {
