@@ -59,4 +59,54 @@ const assignTeacher = async (req, res) => {
   }
 };
 
-export { createCourse, assignTeacher };
+const enrollStudent = async (req, res) => {
+  const { courseId } = req.params;
+  const { studentId } = req.body;
+  const user = req?.user;
+
+  try {
+    // TODO: ask shaqeeb how to perform check throw appropriate error and also think about what if user tries to add user who is ADMIN or TEACHER in student list
+    let course;
+
+    if (user.role === "ADMIN") {
+      course = await Course.findOneAndUpdate(
+        {
+          _id: new mongoose.Types.ObjectId(courseId),
+        },
+        {
+          $push: { students: studentId },
+        },
+        {
+          new: true,
+        }
+      );
+    } else {
+      course = await Course.findOneAndUpdate(
+        {
+          _id: new mongoose.Types.ObjectId(courseId),
+          teachBy: new mongoose.Types.ObjectId(user._id),
+        },
+        {
+          $push: { students: studentId },
+        },
+        { new: true }
+      );
+    }
+
+    if (!course) {
+      return res.status(404).json({ message: "Couse not found." });
+    }
+
+    res.status(200).json({
+      message: "Enrolled successfully.",
+      data: course,
+    });
+  } catch (error) {
+    console.log("Error while enrolling student.", error);
+    res.status(500).json({
+      message: "Error while enrolling student.",
+    });
+  }
+};
+
+export { createCourse, assignTeacher, enrollStudent };

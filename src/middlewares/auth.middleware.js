@@ -39,4 +39,16 @@ const validateAdmin = (req, res, next) => {
   }
 };
 
-export { verifyJWT, validateAdmin };
+const validateIsAdminOrTeacher = (req, res, next) => {
+  const user = req?.user;
+
+  if (["ADMIN", "TEACHER"].includes(user.role)) {
+    next();
+  } else {
+    return res.status(400).json({
+      message: "You don't have permission to access this route.",
+    });
+  }
+};
+
+export { verifyJWT, validateAdmin, validateIsAdminOrTeacher };
