@@ -160,4 +160,29 @@ const unrollStudent = async (req, res) => {
   }
 };
 
-export { createCourse, assignTeacher, enrollStudent, unrollStudent };
+const deleteCourse = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const deletedCourse = await Course.findByIdAndDelete(courseId);
+
+    if (!deletedCourse) {
+      return res.status(404).json({
+        message: "Course not found.",
+      });
+    }
+
+    return res.status(200).json({ message: "Course deleted successfully." });
+  } catch (error) {
+    console.log("Error while deleting course.", error);
+    res.status(500).json({ message: "Error while deleting course." });
+  }
+};
+
+export {
+  createCourse,
+  assignTeacher,
+  enrollStudent,
+  unrollStudent,
+  deleteCourse,
+};

@@ -6,6 +6,7 @@ import {
 } from "../middlewares/auth.middleware.js";
 import {
   createCourse,
+  deleteCourse,
   enrollStudent,
   unrollStudent,
 } from "../controllers/course.controller.js";
@@ -26,5 +27,6 @@ router.delete(
   validateIsAdminOrTeacher,
   unrollStudent
 );
+router.delete("/:courseId", verifyJWT, validateAdmin, deleteCourse);
 
 export default router;
