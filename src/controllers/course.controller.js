@@ -109,4 +109,55 @@ const enrollStudent = async (req, res) => {
   }
 };
 
-export { createCourse, assignTeacher, enrollStudent };
+const unrollStudent = async (req, res) => {
+  const { courseId, studentId } = req.params;
+  const user = req?.user;
+  let course;
+
+  try {
+    if (user.role === "ADMIN") {
+      course = await Course.findOneAndUpdate(
+        {
+          _id: new mongoose.Types.ObjectId(courseId),
+        },
+        {
+          $pull: {
+            students: new mongoose.Types.ObjectId(studentId),
+          },
+        },
+        {
+          new: true,
+        }
+      ).select("-__v");
+    } else {
+      course = await Course.findOneAndUpdate(
+        {
+          _id: new mongoose.Types.ObjectId(courseId),
+          teachBy: new mongoose.Types.ObjectId(user._id),
+        },
+        {
+          $pull: { students: new mongoose.Types.ObjectId(studentId) },
+        },
+        { new: true }
+      ).select("-__v -teachBy");
+    }
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Unrolled successfully.",
+      data: course,
+    });
+  } catch (error) {
+    console.log("Error while unrolling student from course.", error);
+    res
+      .status(500)
+      .json({ message: "Error while unrolling student from course." });
+  }
+};
+
+export { createCourse, assignTeacher, enrollStudent, unrollStudent };

@@ -7,6 +7,7 @@ import {
 import {
   createCourse,
   enrollStudent,
+  unrollStudent,
 } from "../controllers/course.controller.js";
 import { validateCreateCourse } from "../middlewares/validators/course.validator.js";
 
@@ -18,6 +19,12 @@ router.post(
   verifyJWT,
   validateIsAdminOrTeacher,
   enrollStudent
+);
+router.delete(
+  "/:courseId/enrollments/:studentId",
+  verifyJWT,
+  validateIsAdminOrTeacher,
+  unrollStudent
 );
 
 export default router;
