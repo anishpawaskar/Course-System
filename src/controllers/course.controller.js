@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Course } from "../models/course.model.js";
-
+import { User } from "../models/user.model.js";
 const createCourse = async (req, res) => {
   let { name, maxStudents } = req.body;
 
@@ -27,7 +27,17 @@ const createCourse = async (req, res) => {
 const assignTeacher = async (req, res) => {
   const { courseId, teacherId } = req.params;
 
-  try {
+  try { 
+
+    const teacherCourseCount = await Course.countDocuments({ teachBy: teacherId });
+    // if above code is not working then try this, cause teacherId is string and stored teachBy as moongoose id.
+  //  const teacherCourseCount = await Course.countDocuments({ teachBy: new mongoose.Types.ObjectId(teacherId) });
+
+    if (teacherCourseCount >= 5) {
+      return res.status(400).json({
+        message: "This teacher is already assigned to 5 courses.",
+      });
+    }
     // TODO: assign teacher a course only if she have less than 5 courses at a time
     const updatedCourse = await Course.findByIdAndUpdate(
       {
@@ -66,7 +76,7 @@ const enrollStudent = async (req, res) => {
 
   try {
     // TODO: ask shaqeeb how to perform check throw appropriate error and also think about what if user tries to add user who is ADMIN or TEACHER in student list
-    let course;
+     let course;
 
     if (user.role === "ADMIN") {
       course = await Course.findOneAndUpdate(
@@ -103,6 +113,61 @@ const enrollStudent = async (req, res) => {
     });
   } catch (error) {
     console.log("Error while enrolling student.", error);
+    res.status(500).json({
+      message: "Error while enrolling student.",
+    });
+  }
+};
+// aggregation not requried 
+const enrollStudentNewApporch = async (req, res) => {
+  const { courseId } = req.params;
+  const { studentId } = req.body;
+  const user = req?.user;
+
+  try {
+    
+    // Step 1: Check if user exists and is a STUDENT
+    const student = await User.findById(new mongoose.Types.ObjectId(studentId)).select("role");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+   // still this apporch is not a good apporach we check the role through db create a collection role and permission then create a middleware of it,
+   // then add middleware in every route and validate the role and permissions 
+    if (student.role !== "STUDENT") {
+      return res.status(400).json({ message: `Cannot enroll a Course with role ${student.role}.` });
+    }
+
+    // Step 2: Check if student is already enrolled
+    const courseQuery = {
+      _id: new mongoose.Types.ObjectId(courseId),
+    };
+
+    // If TEACHER, ensure the course is theirs
+    if (user.role === "TEACHER") {
+      courseQuery.teachBy = new mongoose.Types.ObjectId(user._id);
+    }
+
+    const course = await Course.findOne(courseQuery);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found or you don't have access." });
+    }
+
+    if (course.students.includes(studentObjectId)) {
+      return res.status(400).json({ message: "Student is already enrolled in this course." });
+    }
+
+    // Step 3: Enroll the student
+    course.students.push(studentObjectId);
+    await course.save();
+
+  return  res.status(200).json({
+      message: "Enrolled successfully.",
+      data: course,
+    });
+  } catch (error) {
+    console.log("Error while enrolling student:", error);
     res.status(500).json({
       message: "Error while enrolling student.",
     });
@@ -159,7 +224,7 @@ const unrollStudent = async (req, res) => {
       .json({ message: "Error while unrolling student from course." });
   }
 };
-
+// exports.deleteCourse
 const deleteCourse = async (req, res) => {
   const { courseId } = req.params;
 
@@ -178,7 +243,7 @@ const deleteCourse = async (req, res) => {
     res.status(500).json({ message: "Error while deleting course." });
   }
 };
-
+//use exports directly from the function.
 export {
   createCourse,
   assignTeacher,
