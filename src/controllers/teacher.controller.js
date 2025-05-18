@@ -9,7 +9,8 @@ const getAllTeachers = async (req, res) => {
 
   try {
     const teachers = await User.aggregate([
-      {
+      { 
+  //role save in the lowercase or best apporache is save in numbers like 1 is for teacher 2 is for student
         $match: {
           role: "TEACHER",
         },
@@ -84,8 +85,9 @@ const getAllTeachers = async (req, res) => {
         },
       },
     ]);
-
-    res
+  //teacher name and which courses teacher is teaching  if i click anish in the teachers table then list of coures 
+  // anish is teaching.
+  return   res
       .status(200)
       .json({ message: "Teachers fetched successfully.", data: teachers[0] });
   } catch (error) {
