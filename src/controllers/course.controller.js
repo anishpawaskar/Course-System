@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Course } from "../models/course.model.js";
+import { User } from "../models/user.model.js";
 
 const createCourse = async (req, res) => {
   let { name, maxStudents } = req.body;
@@ -65,39 +66,49 @@ const enrollStudent = async (req, res) => {
   const user = req?.user;
 
   try {
-    // TODO: ask shaqeeb how to perform check throw appropriate error and also think about what if user tries to add user who is ADMIN or TEACHER in student list
-    let course;
+    const student = await User.findById(studentId).select("role");
 
-    if (user.role === "ADMIN") {
-      course = await Course.findOneAndUpdate(
-        {
-          _id: new mongoose.Types.ObjectId(courseId),
-        },
-        {
-          $push: { students: studentId },
-        },
-        {
-          new: true,
-        }
-      );
-    } else {
-      course = await Course.findOneAndUpdate(
-        {
-          _id: new mongoose.Types.ObjectId(courseId),
-          teachBy: new mongoose.Types.ObjectId(user._id),
-        },
-        {
-          $push: { students: studentId },
-        },
-        { new: true }
-      );
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
     }
+
+    if (student.role !== "STUDENT") {
+      return res
+        .status(400)
+        .json({ message: `Cannot enroll a studnet with role ${student.role}` });
+    }
+
+    let courseQuery = {
+      _id: new mongoose.Types.ObjectId(courseId),
+    };
+
+    if (user.role === "TEACHER") {
+      courseQuery.teachBy = new mongoose.Types.ObjectId(user._id);
+    }
+
+    const course = await Course.findOne(courseQuery);
 
     if (!course) {
-      return res.status(404).json({ message: "Couse not found." });
+      return res.status(404).json({ message: "Course not found." });
     }
 
-    res.status(200).json({
+    if (course.students.includes(student._id)) {
+      return res
+        .status(400)
+        .json({ message: "Student is already enrolled in this course." });
+    }
+
+    course.students.push(student._id);
+
+    if (course.students.length >= course.maxStudents) {
+      return res.status(400).json({
+        message: `Maximum ${course.maxStudents} can be enroll to course.`,
+      });
+    }
+
+    await course.save();
+
+    return res.status(200).json({
       message: "Enrolled successfully.",
       data: course,
     });
