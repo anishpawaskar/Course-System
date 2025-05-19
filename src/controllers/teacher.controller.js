@@ -136,7 +136,7 @@ const getTeacher = async (req, res) => {
       },
     ]);
 
-    if (!teacher) {
+    if (!teacher.length) {
       return res.status(404).json({ message: "Teacher not found." });
     }
 

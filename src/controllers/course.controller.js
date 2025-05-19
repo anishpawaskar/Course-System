@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Course } from "../models/course.model.js";
 import { User } from "../models/user.model.js";
+import { MAX_COURSES } from "../constants.js";
 
 const createCourse = async (req, res) => {
   let { name, maxStudents } = req.body;
@@ -29,7 +30,11 @@ const assignTeacher = async (req, res) => {
   const { courseId, teacherId } = req.params;
 
   try {
-    const teacher = await User.findById(teacherId).select("role name");
+    const [teacher, course] = await Promise.all([
+      User.findById(teacherId).select("role name"),
+      await Course.findById(courseId).select("teachBy name"),
+    ]);
+    // const teacher = await User.findById(teacherId).select("role name");
 
     if (!teacher) {
       return res.status(404).json({ message: "Teacher not found." });
@@ -41,23 +46,25 @@ const assignTeacher = async (req, res) => {
         .json({ message: `Cannot assign a course to a role ${teacher.role}.` });
     }
 
-    const course = await Course.findById(courseId).select("teachBy name");
+    // const course = await Course.findById(courseId).select("teachBy name");
 
     if (!course) {
       return res.status(404).json({ message: "Course not found." });
     }
 
-    if (course.teachBy.equals(teacher._id)) {
-      return res.status(400).json({
-        message: `${teacher.name} is already assgined to ${course.name} course.`,
-      });
+    if (course.teachBy) {
+      if (course.teachBy.equals(teacher._id)) {
+        return res.status(400).json({
+          message: `${teacher.name} is already assgined to ${course.name} course.`,
+        });
+      }
     }
 
     const totalTeachingCourses = await Course.countDocuments({
       teachBy: teacher._id,
     });
 
-    if (totalTeachingCourses >= 5) {
+    if (totalTeachingCourses + 1 > MAX_COURSES) {
       return res
         .status(400)
         .json({ message: "Teacher can be assigned upto 5 courses." });
@@ -69,8 +76,6 @@ const assignTeacher = async (req, res) => {
     return res
       .status(200)
       .json({ message: "Teacher assigned successfully.", data: course });
-
-    res.send("hel owrod");
   } catch (error) {
     console.log("Error while assigning teacher to course.", error);
     res.status(500).json({
