@@ -29,29 +29,48 @@ const assignTeacher = async (req, res) => {
   const { courseId, teacherId } = req.params;
 
   try {
-    // TODO: assign teacher a course only if she have less than 5 courses at a time
-    const updatedCourse = await Course.findByIdAndUpdate(
-      {
-        _id: new mongoose.Types.ObjectId(courseId),
-      },
-      {
-        $set: {
-          teachBy: teacherId,
-        },
-      },
-      {
-        new: true,
-      }
-    ).select("-__v");
+    const teacher = await User.findById(teacherId).select("role name");
 
-    if (!updatedCourse) {
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found." });
+    }
+
+    if (teacher.role !== "TEACHER") {
+      return res
+        .status(400)
+        .json({ message: `Cannot assign a course to a role ${teacher.role}.` });
+    }
+
+    const course = await Course.findById(courseId).select("teachBy name");
+
+    if (!course) {
       return res.status(404).json({ message: "Course not found." });
     }
 
-    res.status(200).json({
-      message: "Teacher assigned successfully.",
-      data: updatedCourse,
+    if (course.teachBy.equals(teacher._id)) {
+      return res.status(400).json({
+        message: `${teacher.name} is already assgined to ${course.name} course.`,
+      });
+    }
+
+    const totalTeachingCourses = await Course.countDocuments({
+      teachBy: teacher._id,
     });
+
+    if (totalTeachingCourses >= 5) {
+      return res
+        .status(400)
+        .json({ message: "Teacher can be assigned upto 5 courses." });
+    }
+
+    course.teachBy = teacherId;
+    await course.save();
+
+    return res
+      .status(200)
+      .json({ message: "Teacher assigned successfully.", data: course });
+
+    res.send("hel owrod");
   } catch (error) {
     console.log("Error while assigning teacher to course.", error);
     res.status(500).json({
