@@ -41,7 +41,11 @@ const signupUser = async (req, res) => {
       .cookie("refreshToken", refreshToken, options)
       .json({
         message: "User signed up successfully.",
-        data: newUser.getUserDetails(),
+        data: {
+          user: newUser.getUserDetails(),
+          accessToken,
+          refreshToken,
+        },
       });
   } catch (error) {
     console.log("Error while signingup user: ", error);
@@ -75,6 +79,7 @@ const signinUser = async (req, res) => {
     const options = {
       secure: true,
       httpOnly: true,
+      sameSite: "none",
     };
 
     return res
@@ -83,7 +88,11 @@ const signinUser = async (req, res) => {
       .cookie("refreshToken", refreshToken, options)
       .json({
         message: "User signed in successfully.",
-        data: user.getUserDetails(),
+        data: {
+          user: user.getUserDetails(),
+          accessToken,
+          refreshToken,
+        },
       });
   } catch (error) {
     console.log("Error while signing in user.", error);
