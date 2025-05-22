@@ -218,10 +218,13 @@ const getAllCourses = async (req, res) => {
   try {
     const courses = await Course.find();
 
+    const totalCourses = await Course.countDocuments();
+
     return res.status(200).json({
       message: "Fetch courses successfully.",
       data: {
         courses,
+        totalCourses,
       },
     });
   } catch (error) {

@@ -15,7 +15,7 @@ import { validateCreateCourse } from "../middlewares/validators/course.validator
 
 const router = Router();
 
-router.post("/", verifyJWT, validateAdmin, validateCreateCourse, createCourse);
+router.post("/", verifyJWT, validateCreateCourse, createCourse);
 router.post(
   "/:courseId/enrollments",
   verifyJWT,

@@ -1,5 +1,6 @@
 import mongoose, { Mongoose } from "mongoose";
 import { User } from "../models/user.model.js";
+import { Course } from "../models/course.model.js";
 
 const getAllTeachers = async (req, res) => {
   let { page, pageSize } = req.query;
@@ -152,4 +153,18 @@ const getTeacher = async (req, res) => {
   }
 };
 
-export { getAllTeachers, getTeacher };
+// TODO: writing this code here TEMP
+const deleteUserAccount = async (req, res) => {
+  try {
+    await Course.deleteMany({
+      createdBy: req.user?._id,
+    });
+
+    res.status(200).json({ message: "All user data is deleted." });
+  } catch (error) {
+    console.log("Error while deleting user account: ", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { getAllTeachers, getTeacher, deleteUserAccount };
