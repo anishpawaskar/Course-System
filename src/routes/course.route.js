@@ -8,6 +8,7 @@ import {
   createCourse,
   deleteCourse,
   enrollStudent,
+  getAllCourses,
   unrollStudent,
 } from "../controllers/course.controller.js";
 import { validateCreateCourse } from "../middlewares/validators/course.validator.js";
@@ -28,5 +29,6 @@ router.delete(
   unrollStudent
 );
 router.delete("/:courseId", verifyJWT, validateAdmin, deleteCourse);
+router.get("/", verifyJWT, getAllCourses);
 
 export default router;

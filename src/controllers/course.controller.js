@@ -214,10 +214,27 @@ const deleteCourse = async (req, res) => {
   }
 };
 
+const getAllCourses = async (req, res) => {
+  try {
+    const courses = await Course.find();
+
+    return res.status(200).json({
+      message: "Fetch courses successfully.",
+      data: {
+        courses,
+      },
+    });
+  } catch (error) {
+    console.log("Error while fetching all courses: ", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   createCourse,
   assignTeacher,
   enrollStudent,
   unrollStudent,
   deleteCourse,
+  getAllCourses,
 };
